@@ -1,0 +1,102 @@
+#
+# Copyright (C) 2022-2023 Lin Song <linsongui@gmail.com>
+
+name: test_set_3
+
+on: workflow_call
+
+jobs:
+  test_set_3:
+    if: github.repository_owner == 'hwdsl2'
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, ubuntu-20.04]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+      - name: Test
+        run: |
+          set -ex
+
+          mkdir -p /opt/src
+          cd /opt/src
+          ls -ld "$GITHUB_WORKSPACE/openvpn-install.sh"
+
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get -yqq update
+          sudo apt-get -yqq dist-upgrade
+          sudo apt-get -yqq install wget
+
+          cp -f "$GITHUB_WORKSPACE"/openvpn-install.sh ./openvpn.sh
+
+          sudo bash openvpn.sh --auto
+
+          sudo netstat -anpu | grep openvpn
+          sudo systemctl status openvpn-server@server
+          ls -ld ~/client.ovpn
+
+          sudo bash openvpn.sh <<ANSWERS
+          1
+          client2
+          ANSWERS
+
+          ls -ld ~/client2.ovpn
+          rm -f ~/client2.ovpn
+
+          sudo bash openvpn.sh <<ANSWERS
+          2
+          2
+          ANSWERS
+
+          ls -ld ~/client2.ovpn
+
+          sudo bash openvpn.sh <<ANSWERS
+          3
+          ANSWERS
+
+          sudo bash openvpn.sh <<ANSWERS | grep -i "2 clients"
+          3
+          ANSWERS
+
+          sudo bash openvpn.sh <<ANSWERS
+          4
+          2
+          y
+          ANSWERS
+
+          ls -ld ~/client2.ovpn && exit 1
+
+          sudo bash openvpn.sh <<ANSWERS | grep -i "1 client"
+          3
+          ANSWERS
+
+          sudo bash openvpn.sh <<ANSWERS
+          5
+          y
+          ANSWERS
+
+          sudo netstat -anpu | grep openvpn && exit 1
+          rm -f ~/client*.ovpn
+
+          sudo bash openvpn.sh <<ANSWERS
+
+
+
+
+
+          ANSWERS
+
+          sudo netstat -anpu | grep openvpn
+          sudo systemctl status openvpn-server@server
+          ls -ld ~/client.ovpn
+
+          sudo bash openvpn.sh <<ANSWERS
+          5
+          y
+          ANSWERS
+
+          sudo netstat -anpu | grep openvpn && exit 1
+          rm -f ~/client*.ovpn
