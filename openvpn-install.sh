@@ -75,6 +75,8 @@ check_nftables() {
 	fi
 }
 
+#!/bin/bash
+
 LOCKFILE=/var/lib/dpkg/lock-frontend
 MAX_WAIT=30
 WAIT_TIME=1
@@ -90,7 +92,7 @@ wait_for_lock() {
     (( count += WAIT_TIME ))
   done
 }
-wait_for_lock
+
 install_wget() {
 	# Detect some Debian minimal setups where neither wget nor curl are installed
 	if ! hash wget 2>/dev/null && ! hash curl 2>/dev/null; then
@@ -552,7 +554,10 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 				show_usage "Unknown parameter: $1"
 				;;
 		esac
-	done
+
+wait_for_lock
+
+while true; do
 	install_wget
 	install_iproute
 	show_start_setup
@@ -564,6 +569,7 @@ if [[ ! -e /etc/openvpn/server/server.conf ]]; then
 	select_port
 	select_dns
 	enter_client_name
+done
 	if [ "$auto" = 0 ]; then
 		echo
 		echo "OpenVPN installation is ready to begin."
